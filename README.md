@@ -150,6 +150,10 @@ Search the hosted SkillNet catalog by keyword or semantic intent. Keyword search
 uses BM25 and ranks results by relevance by default; vector search uses the
 search service's embeddings.
 
+The SDK and CLI default to keyword relevance starting with `skillnet-ai` 0.1.4.
+Upgrade with `pip install --upgrade skillnet-ai`; use `sort_by="stars"` or
+`--sort-by stars` for explicit star-based sorting.
+
 ```python
 results = client.search(
     q="analyze financial PDF reports",

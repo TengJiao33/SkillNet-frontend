@@ -119,6 +119,10 @@ Query the hosted SkillNet catalog and return a list of skill records. Keyword
 search uses BM25 across skill names, descriptions, and tags, ranked by relevance
 by default. Use `sort_by="stars"` or `sort_by="recent"` to change the order.
 
+Since 0.1.4, SDK and CLI keyword searches default to relevance instead of stars.
+Upgrade with `pip install --upgrade skillnet-ai`. To retain star-based sorting,
+pass `sort_by="stars"` in Python or `--sort-by stars` in the CLI.
+
 For natural-language tasks, use vector search, which returns results in similarity
 order using the hosted service's embeddings. `EMBEDDING_*` settings apply to local
 analysis and routing.
