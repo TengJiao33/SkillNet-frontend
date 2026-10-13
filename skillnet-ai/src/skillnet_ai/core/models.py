@@ -44,7 +44,6 @@ class MetaModel(BaseModel):
     page: int | None = None
     min_stars: int | None = None
     sort_by: str | None = None
-    sort_order: str | None = None
 
     # Vector mode specific fields (may be None in Keyword mode)
     threshold: float | None = None

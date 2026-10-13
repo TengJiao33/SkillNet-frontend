@@ -9,6 +9,7 @@ from skillnet_ai.core.models import (
     Endpoint,
     RouteOptions,
     RouteResult,
+    SkillModel,
 )
 from skillnet_ai.creator import SkillCreator
 from skillnet_ai.downloader import GitHubAPIError, SkillDownloader
@@ -64,14 +65,14 @@ class SkillNetClient:
     def search(
         self,
         q: str,
-        mode: str = "keyword",
+        mode: Literal["keyword", "vector"] = "keyword",
         category: str | None = None,
         limit: int = 20,
         page: int = 1,
         min_stars: int = 0,
-        sort_by: str = "stars",
+        sort_by: str = "relevance",
         threshold: float = 0.8,
-    ) -> list[Any]:
+    ) -> list[SkillModel]:
         """
         Search for skills on SkillNet.
 
@@ -82,7 +83,7 @@ class SkillNetClient:
             limit: Max results.
             page: Page number (keyword mode only).
             min_stars: Filter by stars (keyword mode only).
-            sort_by: 'stars' or 'recent' (keyword mode only).
+            sort_by: 'relevance', 'stars' or 'recent', descending (keyword mode only).
             threshold: Similarity threshold (vector mode only).
 
         Returns:

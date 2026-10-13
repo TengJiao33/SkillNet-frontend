@@ -147,7 +147,8 @@ The client reads environment variables and saved settings. See
 ### Search
 
 Search the hosted SkillNet catalog by keyword or semantic intent. Keyword search
-defaults to sorting by stars; vector search uses the search service's embeddings.
+uses BM25 and ranks results by relevance by default; vector search uses the
+search service's embeddings.
 
 ```python
 results = client.search(
@@ -338,7 +339,7 @@ for complete examples. `skillnet configure --interactive` saves settings locally
 The SkillNet search API is public and requires no authentication.
 
 ```bash
-curl "http://api-skillnet.openkg.cn/v1/search?q=pdf&sort_by=stars&limit=5"
+curl "http://api-skillnet.openkg.cn/v1/search?q=pdf&limit=5"
 curl "http://api-skillnet.openkg.cn/v1/search?q=reading%20charts&mode=vector&threshold=0.8"
 ```
 
@@ -355,8 +356,7 @@ curl "http://api-skillnet.openkg.cn/v1/search?q=reading%20charts&mode=vector&thr
 | `limit` | int | `10` | Results per page, max 50 |
 | `page` | int | `1` | Page number, keyword mode only |
 | `min_stars` | int | `0` | Minimum star count, keyword mode only |
-| `sort_by` | string | `stars` | `stars` or `recent`, keyword mode only |
-| `sort_order` | string | `desc` | `desc` or `asc`, keyword mode only; REST API only |
+| `sort_by` | string | `relevance` | `relevance`, `stars` or `recent`, descending; keyword mode only |
 | `threshold` | float | `0.8` | Similarity threshold, vector mode only |
 
 </details>

@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 from skillnet_ai.core.models import SkillModel
 from skillnet_ai.interfaces import cli
-from skillnet_ai.interfaces.client import SkillNetClient
+from skillnet_ai.interfaces.client import SkillNetClient, SkillNetError
 
 
 @pytest.fixture
@@ -44,6 +44,8 @@ def test_sdk_and_cli_json_preserve_source_identity(search_response):
         (r.get("repo_name"), r.get("skill_dir")) for r in rows
     ]
     assert get.call_count == 1
+    assert get.call_args.kwargs["params"]["sort_by"] == "relevance"
+    assert "sort_order" not in get.call_args.kwargs["params"]
     assert "repo_name" not in get.call_args.kwargs["params"]
     assert "skill_dir" not in get.call_args.kwargs["params"]
     output = CliRunner().invoke(cli.app, ["search", "example", "--json"])
@@ -53,6 +55,88 @@ def test_sdk_and_cli_json_preserve_source_identity(search_response):
         (r.get("repo_name"), r.get("skill_dir")) for r in rows
     ]
     assert [r["skill_url"] for r in data] == [r.get("skill_url") for r in rows]
+
+
+@pytest.mark.parametrize("mode", ["keyword", "vector"])
+def test_both_modes_keep_the_existing_sdk_and_cli_output(search_response, monkeypatch, mode):
+    rows, get = search_response
+    response = get.return_value
+    response._content = json.dumps(
+        {
+            "success": True,
+            "data": [
+                {
+                    **row,
+                    "relevance_score": 3.25 if mode == "keyword" else None,
+                    "similarity": 0.9 if mode == "vector" else None,
+                }
+                for row in rows
+            ],
+            "meta": {},
+        }
+    ).encode()
+    expected = [SkillModel(**row).model_dump() for row in rows]
+    results = SkillNetClient().search("example", mode=mode)
+    assert [row.model_dump() for row in results] == expected
+    params = get.call_args.kwargs["params"]
+    assert "sort_order" not in params
+    if mode == "keyword":
+        assert params["sort_by"] == "relevance"
+    else:
+        assert "sort_by" not in params
+
+    output = CliRunner().invoke(cli.app, ["search", "example", "--mode", mode, "--json"])
+    assert output.exit_code == 0, output.output
+    assert json.loads(output.stdout)["data"] == expected
+
+    monkeypatch.setattr(cli, "console", Console(width=180, force_terminal=False, highlight=False))
+    output = CliRunner().invoke(cli.app, ["search", "example", "--mode", mode])
+    assert output.exit_code == 0, output.output
+    assert "Repo Stars" in output.stdout and "Description" in output.stdout
+    assert "relevance_score" not in output.stdout and "similarity" not in output.stdout
+
+
+@pytest.mark.parametrize("sort_by", ["stars", "recent"])
+def test_explicit_keyword_sorts_remain_available(search_response, sort_by):
+    _, get = search_response
+    result = CliRunner().invoke(cli.app, ["search", "example", "--sort-by", sort_by])
+    assert result.exit_code == 0, result.output
+    assert get.call_args.kwargs["params"]["sort_by"] == sort_by
+    assert "sort_order" not in get.call_args.kwargs["params"]
+
+
+def test_cli_has_no_sort_order_option():
+    help_result = CliRunner().invoke(cli.app, ["search", "--help"])
+    assert help_result.exit_code == 0
+    assert "--sort-order" not in help_result.stdout
+    result = CliRunner().invoke(cli.app, ["search", "example", "--sort-order", "asc"])
+    assert result.exit_code == 2
+
+
+@pytest.mark.parametrize("mode", ["keyword", "vector"])
+@pytest.mark.parametrize("limit", [0, 51, 100])
+def test_invalid_limit_is_rejected_before_http(search_response, mode, limit):
+    _, get = search_response
+    with pytest.raises(SkillNetError, match="limit 1–50"):
+        SkillNetClient().search("example", mode=mode, limit=limit)
+    result = CliRunner().invoke(
+        cli.app, ["search", "example", "--mode", mode, "--limit", str(limit)]
+    )
+    assert result.exit_code == 2
+    get.assert_not_called()
+
+
+@pytest.mark.parametrize("mode", ["keyword", "vector"])
+@pytest.mark.parametrize("limit", [1, 50])
+def test_public_limit_boundaries_reach_the_service(search_response, mode, limit):
+    _, get = search_response
+    SkillNetClient().search("example", mode=mode, limit=limit)
+    assert get.call_args.kwargs["params"]["limit"] == limit
+    result = CliRunner().invoke(
+        cli.app, ["search", "example", "--mode", mode, "--limit", str(limit)]
+    )
+    assert result.exit_code == 0, result.output
+    assert get.call_args.kwargs["params"]["limit"] == limit
 
 
 def test_cli_displays_sources_without_changing_download_urls(search_response, monkeypatch):

@@ -116,7 +116,9 @@ endpoints are configured separately.
 ### Search
 
 Query the hosted SkillNet catalog and return a list of skill records. Keyword
-search works with short names/keywords and defaults to sorting by repository stars.
+search uses BM25 across skill names, descriptions, and tags, ranked by relevance
+by default. Use `sort_by="stars"` or `sort_by="recent"` to change the order.
+
 For natural-language tasks, use vector search, which returns results in similarity
 order using the hosted service's embeddings. `EMBEDDING_*` settings apply to local
 analysis and routing.
@@ -152,7 +154,7 @@ includes both fields. Source metadata is `None` when unavailable.
 | `limit` | `int` | `20` | Results requested; the public service accepts 1–50 |
 | `page` | `int` | `1` | Page number for keyword search |
 | `min_stars` | `int` | `0` | Minimum star count for keyword search |
-| `sort_by` | `str` | `"stars"` | `"stars"` or `"recent"` for keyword search |
+| `sort_by` | `str` | `"relevance"` | `"relevance"`, `"stars"` or `"recent"`, descending; keyword only |
 | `threshold` | `float` | `0.8` | Similarity threshold for vector search |
 
 </details>

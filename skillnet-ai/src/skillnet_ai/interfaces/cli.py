@@ -106,10 +106,10 @@ def search(
     q: str = typer.Argument(...),
     mode: str = typer.Option("keyword", help="keyword or vector"),
     category: str | None = typer.Option(None),
-    limit: int = typer.Option(20, min=1, max=100),
+    limit: int = typer.Option(20, min=1, max=50),
     page: int = typer.Option(1, min=1),
     min_stars: int = typer.Option(0, min=0),
-    sort_by: str = typer.Option("stars"),
+    sort_by: str = typer.Option("relevance", help="relevance, stars or recent; descending"),
     threshold: float = typer.Option(0.8, min=0, max=1),
     json_output: bool = typer.Option(False, "--json"),
 ):
