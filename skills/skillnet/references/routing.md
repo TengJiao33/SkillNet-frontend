@@ -1,7 +1,7 @@
 # Analyze and route local skills
 
 Analysis requires skillnet-ai 0.1.1 with the `graph` extra.
-Routing additionally requires either the `claude` or `codex` extra.
+Routing additionally requires one of the `claude`, `codex` or `dsh` extras.
 Use the user's existing model configuration; do not read agent login credentials.
 
 1. Configure analysis (`API_KEY`, `BASE_URL`, `SKILLNET_MODEL`), embeddings
@@ -25,6 +25,11 @@ SDK call as a successful empty selection or substitute a retrieval-only result.
 
 `skillnet doctor --json` is offline. `--check-explorer` is an explicit, billable
 check of the chosen SDK's exploration and structured-output behavior.
+
+For DeepSeek Harness, install `skillnet-ai[graph,dsh]` and select `--backend dsh`
+(or `SKILLNET_EXPLORER_BACKEND=dsh`). See the
+[DSH Explorer setup](https://github.com/zjunlp/SkillNet/blob/main/skillnet-ai/README.md#deepseek-harness-explorer)
+for its Messages-compatible endpoint configuration.
 
 Version 0.1.1 removes basic/scenario mode switches, preset scenes and orchestrate.
 Old graphs must be rebuilt; no execution prompt is returned.

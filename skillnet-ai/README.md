@@ -30,7 +30,7 @@
 Search and public downloads need no API key. Create, evaluate, and analyze use an
 OpenAI-compatible Chat Completions endpoint. Analyze also needs an embedding
 endpoint; route uses that same embedding endpoint and a separately configured
-Claude or Codex Agent SDK.
+Claude, Codex or DeepSeek Harness SDK.
 
 The optional [browser interface](#browser-interface) opens local skills and saved
 analysis results with `skillnet ui`.
@@ -53,6 +53,7 @@ Install optional dependencies for analysis and routing:
 pip install "skillnet-ai[graph]"         # scenario analysis
 pip install "skillnet-ai[graph,claude]"  # analysis and routing via Claude
 pip install "skillnet-ai[graph,codex]"   # analysis and routing via Codex
+pip install "skillnet-ai[graph,dsh]"     # analysis and routing via DeepSeek Harness
 ```
 
 ---
@@ -92,7 +93,7 @@ skillnet download <skill_url> -d ./my_skills
 | Create skills | `client.create(...)` | `skillnet create ...` | Chat Completions API |
 | Evaluate skills | `client.evaluate(...)` | `skillnet evaluate ...` | Chat Completions API |
 | Analyze relationships | `client.analyze(...)` | `skillnet analyze ...` | Chat Completions + embeddings |
-| Route local skills | `client.route(...)` | `skillnet route ...` | Embeddings + Claude or Codex Agent SDK |
+| Route local skills | `client.route(...)` | `skillnet route ...` | Embeddings + Claude, Codex or DeepSeek Harness SDK |
 | Browse local skills | — | `skillnet ui` | None |
 
 ---
@@ -328,7 +329,7 @@ no routing calls are using them.
 
 Select up to `k` skills for a task using an index created by `analyze`. Hybrid
 search combines BM25 and vector rankings, then graph expansion adds related
-candidates. A Claude or Codex Agent SDK compares them in a task Wiki containing
+candidates. A Claude, Codex or DeepSeek Harness SDK compares them in a task Wiki containing
 skill profiles, relationships, and source text.
 
 ```python
@@ -344,7 +345,7 @@ for skill in result.skills:
 
 Relations guide candidate exploration; the task and each skill's constraints
 determine the final selection. Agent SDK extras are loaded only for routing;
-install `skillnet-ai[graph,claude]` or `skillnet-ai[graph,codex]`.
+install the `graph` extra and one of `claude`, `codex` or `dsh`.
 See [endpoint configuration](#analysis-and-routing-endpoints) for the Explorer
 and embedding settings.
 
@@ -359,8 +360,8 @@ Pass budgets through `options=RouteOptions(...)`, imported from `skillnet_ai`.
 | `candidate_limit` | `100` | Total candidates after graph expansion; must be at least seed_limit |
 | `max_depth` | `2` | Graph expansion depth; zero keeps only seeds |
 | `timeout` | `300` | Query embedding timeout and a separate SDK exploration timeout, in seconds |
-| `max_turns` | `24` | Claude SDK turn limit; unused by Codex |
-| `read_limit` | `None` | Defaults to 2 + 2*k; Claude Read-call budget; Codex command budget adds 9 |
+| `max_turns` | `24` | Claude turn or DSH model-step limit; unused by Codex |
+| `read_limit` | `None` | Defaults to 2 + 2*k; Claude/DSH read-call budget; Codex command budget adds 9 |
 | `reasoning_effort` | `"medium"` | Explorer reasoning: low/medium/high |
 
 </details>
@@ -538,7 +539,7 @@ into your process environment before creating the client.
 | `EMBEDDING_API_KEY` | `analyze` and `route` | unset |
 | `EMBEDDING_BASE_URL` | `analyze` and `route` | unset |
 | `EMBEDDING_MODEL` | `analyze` and `route` | unset |
-| `SKILLNET_EXPLORER_BACKEND` | `route`: claude or codex | `claude` |
+| `SKILLNET_EXPLORER_BACKEND` | `route`: claude, codex or dsh | `claude` |
 | `SKILLNET_EXPLORER_API_KEY` | `route` SDK credential | unset |
 | `SKILLNET_EXPLORER_BASE_URL` | `route` SDK-compatible base URL | unset |
 | `SKILLNET_EXPLORER_MODEL` | `route` SDK model | unset |
@@ -597,6 +598,23 @@ them all. The default backend is `claude`; select Codex with
 For per-call configuration, pass `Endpoint(api_key=..., base_url=..., model=...)`
 as `embedding` or `explorer`; import `Endpoint` from `skillnet_ai`. The analyze
 `model` keyword changes only the analysis model, retaining the client's URL and key.
+
+### DeepSeek Harness Explorer
+
+Install `skillnet-ai[graph,dsh]` and configure a DeepSeek Messages-compatible
+Explorer endpoint:
+
+```bash
+skillnet configure --explorer-backend dsh --explorer-base-url https://agent.example/anthropic \
+  --explorer-model explorer-model --explorer-api-key-env MY_AGENT_KEY
+skillnet route "Check required columns in my CSV" --index-dir ./skillnet_index --backend dsh --json
+```
+
+Replace the example URL and model with your provider's values. Python callers use
+`backend="dsh"` with the existing `explorer=Endpoint(...)`. Analysis and embedding
+settings remain separate. The SDK supplies its runtime and reads the task Wiki
+in an isolated session with read/list tools. `max_turns` limits model steps;
+low/medium/high reasoning maps to DSH low/high/max. Usage is returned as `None`.
 
 ---
 
